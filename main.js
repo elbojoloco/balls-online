@@ -1,9 +1,10 @@
+import { throttle } from 'lodash-es'
 import { socket } from './socket'
 
 const canvas = document.getElementById('game')
 const ctx = canvas.getContext('2d')
 
-const prediction = true
+const prediction = false
 
 let player = null
 let players = []
@@ -14,6 +15,14 @@ socket.listen('init', data => {
   player = data.player
 
   console.log(player)
+})
+
+socket.listen('death', data => {
+  // socket.disconnect();
+
+  ctx.clearRect(0, 0, 500, 500);
+
+  setTimeout(() => alert('You\'re dead'), 100)
 })
 
 socket.listen('tick', data => {
@@ -204,3 +213,18 @@ window.addEventListener('blur', () => {
 })
 document.addEventListener('keydown', e => press(e.key))
 document.addEventListener('keyup', e => release(e.key))
+
+const handleMouseMove = throttle(e => {
+  if (! player) return;
+
+  player.mouse = {
+    x: e.x - e.target.offsetLeft,
+    y: e.y - e.target.offsetTop
+  }
+
+  console.log(player.mouse)
+
+  socket.send('mouse', { mouse: player.mouse })
+}, 200)
+
+canvas.addEventListener('mousemove', handleMouseMove)

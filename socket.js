@@ -1,8 +1,8 @@
-const ws = new WebSocket(`ws://127.0.0.1:8001`)
+const ws = new WebSocket(`wss://elbojoloco-urban-engine-vjj6gp6xx6fpvww-8001.preview.app.github.dev`)
 const encoder = new TextEncoder()
 const decoder = new TextDecoder()
 
-const lag = 500
+const lag = 0
 
 ws.binaryType = 'arraybuffer'
 
@@ -39,6 +39,10 @@ class Socket {
 
     this.#listeners[type].push(cb)
   }
+
+  // disconnect() {
+  //   ws.disconnect()
+  // }
 }
 
 const socket = new Socket()

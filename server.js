@@ -50,6 +50,11 @@ socketServer.on('connection', (ws, req) => {
       left: false,
       right: false,
     },
+    mouse: {
+      x: 0,
+      y: 0
+    },
+    lastMouseEvent: null
   }
 
   const initData = {
@@ -67,6 +72,11 @@ socketServer.on('connection', (ws, req) => {
     if (data.type === 'input') {
       players[ws.id].input = data.data.input
     }
+
+    if (data.type === 'mouse') {
+      players[ws.id].mouse = data.data.mouse
+      players[ws.id].lastMouseEvent = Date.now()
+    }
   })
 
   ws.on('close', () => {
@@ -77,8 +87,89 @@ socketServer.on('connection', (ws, req) => {
   console.log(players)
 })
 
+
+const isUsingMouse = (playerId) => {
+  return (Date.now() - players[playerId].lastMouseEvent) < 200
+}
+
+const handleMouseInputs = player => {
+  dx = player.mouse.x - player.position.x
+  dy = player.mouse.y - player.position.y
+
+  const mag = Math.sqrt(dx*dx + dy*dy)
+
+  let nx =
+    dx !== 0
+      ? player.position.x + (dx / mag) * (frameTime / 4)
+      : player.position.x
+  let ny =
+    dy !== 0
+      ? player.position.y + (dy / mag) * (frameTime / 4)
+      : player.position.y
+
+  if (dx !== 0) {
+    if (nx >= max) nx = max
+    if (nx <= min) nx = min
+  }
+
+  if (dy !== 0) {
+    if (ny >= max) ny = max
+    if (ny <= min) ny = min
+  }
+
+
+  player.position.x += dx/mag * 5
+  player.position.y += dy/mag * 5
+} 
+
+// const handleKeyboardInputs = () => {
+
+// }
+
+function getLightness(hex) {
+  // extract the red, green, and blue components from the hexadecimal string
+  const r = parseInt(hex.substring(1, 3), 16);
+  const g = parseInt(hex.substring(3, 5), 16);
+  const b = parseInt(hex.substring(5, 7), 16);
+
+  // calculate the lightness using the formula
+  const lightness = (Math.max(r, g, b) + Math.min(r, g, b)) / 2;
+
+  // return the lightness
+  return lightness;
+}
+
+const kill = player => {
+  console.log('Killing ', player)
+  socketServer.clients.forEach(client => {
+    if (client.id == player.id) {
+      client.send(Buffer.from(JSON.stringify({ type: 'death', data: {} })))
+      client.terminate();
+    }
+
+    delete players[player.id];
+  })
+}
+
 const tick = () => {
+  if (Object.keys(players).length > 1) {
+    getPlayerPairs().forEach(([p1, p2]) => {
+      if (detectCollision(p1, p2)) {
+        console.log('collision')
+        if (getLightness(p1.color) > getLightness(p2.color)) {
+          kill(p2)
+        } else {
+          kill(p1)
+        }
+      }
+    })
+  }
+
   Object.keys(players).forEach(id => {
+    if (isUsingMouse(id) || true) {
+      return handleMouseInputs(players[id])
+    }
+
     const { up, down, left, right } = players[id].input
 
     if (![up, down, left, right].includes(true)) return
@@ -117,10 +208,38 @@ const tick = () => {
   })
 }
 
-const FPS = 15 // Frames per second
+const FPS = 60 // Frames per second
 const frameTime = 1000 / FPS // Time for each frame in milliseconds
 
 let previousTime = Date.now() // The time at the start of the previous frame
+
+const getPlayerPairs = () => {
+  // array to store the pairs of players
+  const pairs = [];
+
+  const ids = Object.keys(players)
+
+  // outer loop to iterate over the ids in the original array
+  for (let i = 0; i < ids.length; i++) {
+    // inner loop to iterate over the ids in the original array
+    // starting from the current index of the outer loop
+    for (let j = i + 1; j < ids.length; j++) {
+      // add a new pair of ids to the pairs array
+      pairs.push([players[ids[i]], players[ids[j]]]);
+    }
+  }
+
+  return pairs;
+}
+
+function detectCollision(player1, player2) {
+  // Calculate the distance between the centers of the two circles
+  let dx = player1.position.x - player2.position.x;
+  let dy = player1.position.y - player2.position.y;
+  let distance = Math.sqrt(dx * dx + dy * dy);
+
+  return distance < playerSize * 2;
+}
 
 function gameLoop() {
   const currentTime = Date.now() // The current time
