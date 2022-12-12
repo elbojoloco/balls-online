@@ -17,9 +17,9 @@ Balls online is a multiplayer browser game where you are a ball. You can move yo
 
 ## TODO
 
-[ ] Add lag emulation when receiving events as well  
-[ ] Split up files  
-[ ] Add server reconciliation support  
-[ ] Add client-side interpolation support  
-[ ] Implement better client-side prediction  
-[ ] Convert to TS
+- [ ] Add lag emulation when receiving events as well
+- [ ] Split up files
+- [ ] Add server reconciliation support
+- [ ] Add client-side interpolation support
+- [ ] Implement better client-side prediction
+- [ ] Convert to TS
