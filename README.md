@@ -2,6 +2,10 @@
 
 Balls online is a multiplayer browser game where you are a ball. You can move your ball and see other balls moving. The only purpose it serves is as a playground for game and netcode concepts.
 
+## Live demo
+
+Visit [https://balls.bojodev.io](https://balls.bojodev.io) for a live preview.
+
 ## Setup
 
 1. `yarn`
@@ -23,3 +27,4 @@ Balls online is a multiplayer browser game where you are a ball. You can move yo
 - [ ] Add client-side interpolation support
 - [ ] Implement better client-side prediction
 - [ ] Convert to TS
+- [x] Deploy live demo
