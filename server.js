@@ -92,34 +92,37 @@ const isUsingMouse = (playerId) => {
   return (Date.now() - players[playerId].lastMouseEvent) < 200
 }
 
+const deadzone = 3
+
 const handleMouseInputs = player => {
   dx = player.mouse.x - player.position.x
   dy = player.mouse.y - player.position.y
 
-  const mag = Math.sqrt(dx*dx + dy*dy)
+  if (Math.abs(dx) > deadzone|| Math.abs(dy) > deadzone) {
+    const mag = Math.sqrt(dx*dx + dy*dy)
 
-  let nx =
-    dx !== 0
-      ? player.position.x + (dx / mag) * (frameTime / 4)
-      : player.position.x
-  let ny =
-    dy !== 0
-      ? player.position.y + (dy / mag) * (frameTime / 4)
-      : player.position.y
+    let nx =
+      dx !== 0
+        ? player.position.x + (dx / mag) * (frameTime / 4)
+        : player.position.x
+    let ny =
+      dy !== 0
+        ? player.position.y + (dy / mag) * (frameTime / 4)
+        : player.position.y
 
-  if (dx !== 0) {
-    if (nx >= max) nx = max
-    if (nx <= min) nx = min
+    if (dx !== 0) {
+      if (nx >= max) nx = max
+      if (nx <= min) nx = min
+    }
+
+    if (dy !== 0) {
+      if (ny >= max) ny = max
+      if (ny <= min) ny = min
+    }
+
+    player.position.x += dx/mag * 5
+    player.position.y += dy/mag * 5
   }
-
-  if (dy !== 0) {
-    if (ny >= max) ny = max
-    if (ny <= min) ny = min
-  }
-
-
-  player.position.x += dx/mag * 5
-  player.position.y += dy/mag * 5
 } 
 
 // const handleKeyboardInputs = () => {
@@ -133,10 +136,7 @@ function getLightness(hex) {
   const b = parseInt(hex.substring(5, 7), 16);
 
   // calculate the lightness using the formula
-  const lightness = (Math.max(r, g, b) + Math.min(r, g, b)) / 2;
-
-  // return the lightness
-  return lightness;
+  return (Math.max(r, g, b) + Math.min(r, g, b)) / 2;
 }
 
 const kill = player => {
@@ -144,7 +144,6 @@ const kill = player => {
   socketServer.clients.forEach(client => {
     if (client.id == player.id) {
       client.send(Buffer.from(JSON.stringify({ type: 'death', data: {} })))
-      client.terminate();
     }
 
     delete players[player.id];
@@ -156,7 +155,7 @@ const tick = () => {
     getPlayerPairs().forEach(([p1, p2]) => {
       if (detectCollision(p1, p2)) {
         console.log('collision')
-        if (getLightness(p1.color) > getLightness(p2.color)) {
+        if (getLightness(p1.color) < getLightness(p2.color)) {
           kill(p2)
         } else {
           kill(p1)
@@ -208,7 +207,7 @@ const tick = () => {
   })
 }
 
-const FPS = 60 // Frames per second
+const FPS = 30 // Frames per second
 const frameTime = 1000 / FPS // Time for each frame in milliseconds
 
 let previousTime = Date.now() // The time at the start of the previous frame

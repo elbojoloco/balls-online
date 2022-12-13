@@ -10,19 +10,15 @@ let player = null
 let players = []
 
 socket.listen('init', data => {
-  // console.log(data)
-
   player = data.player
 
   console.log(player)
 })
 
-socket.listen('death', data => {
-  // socket.disconnect();
+socket.listen('death', () => {
+  player.dead = true
 
-  ctx.clearRect(0, 0, 500, 500);
-
-  setTimeout(() => alert('You\'re dead'), 100)
+  alert('You died')
 })
 
 socket.listen('tick', data => {
@@ -30,11 +26,13 @@ socket.listen('tick', data => {
 
   const ps = data.players
 
-  player.position.x = ps[player.id].position.x
-  player.position.y = ps[player.id].position.y
+  if (!player.dead) {
+    player.position.x = ps[player.id].position.x
+    player.position.y = ps[player.id].position.y
 
-  delete ps[player.id]
-
+    delete ps[player.id]
+  }
+  
   players = Object.values(ps)
 })
 
@@ -115,8 +113,8 @@ const tick = () => {
 const draw = () => {
   ctx.clearRect(0, 0, canvas.width, canvas.height)
 
-  if (player) {
-    circle(player.position.x, player.position.y)
+  if (player && !player.dead) {
+    circle(player.position.x, player.position.y, player.color)
   }
 
   if (players.length) {
@@ -149,7 +147,7 @@ function loop() {
   }
 }
 
-startLoop(60)
+startLoop(30)
 
 const inputMap = {
   Up: 'up',
@@ -180,7 +178,7 @@ const press = key => {
 
   inputState[inputMap[key]] = true
 
-  if (changed) {
+  if (changed && ! player.dead) {
     socket.send('input', { input: inputState })
   }
 }
@@ -196,7 +194,7 @@ const release = key => {
 
   inputState[inputMap[key]] = false
 
-  if (changed) {
+  if (changed && !player.dead) {
     socket.send('input', { input: inputState })
   }
 }
@@ -207,6 +205,8 @@ window.addEventListener('blur', () => {
   inputState.left = false
   inputState.right = false
 
+  if (player && player.dead) return
+
   socket.send('input', {
     input: inputState,
   })
@@ -215,16 +215,14 @@ document.addEventListener('keydown', e => press(e.key))
 document.addEventListener('keyup', e => release(e.key))
 
 const handleMouseMove = throttle(e => {
-  if (! player) return;
+  if (! player || player.dead) return;
 
   player.mouse = {
     x: e.x - e.target.offsetLeft,
     y: e.y - e.target.offsetTop
   }
 
-  console.log(player.mouse)
-
   socket.send('mouse', { mouse: player.mouse })
-}, 200)
+}, 50)
 
 canvas.addEventListener('mousemove', handleMouseMove)

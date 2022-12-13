@@ -1,4 +1,4 @@
-const ws = new WebSocket(`wss://elbojoloco-urban-engine-vjj6gp6xx6fpvww-8001.preview.app.github.dev`)
+const ws = new WebSocket(`ws://localhost:8001`)
 const encoder = new TextEncoder()
 const decoder = new TextDecoder()
 
